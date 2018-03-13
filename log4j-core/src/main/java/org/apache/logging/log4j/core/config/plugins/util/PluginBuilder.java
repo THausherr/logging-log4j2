@@ -165,6 +165,7 @@ public class PluginBuilder implements Builder<Object> {
         AccessibleObject.setAccessible(fields.toArray(new Field[] {}), true);
         final StringBuilder log = new StringBuilder();
         boolean invalid = false;
+        String reason = "";
         for (final Field field : fields) {
             log.append(log.length() == 0 ? simpleName(builder) + "(" : ", ");
             final Annotation[] annotations = field.getDeclaredAnnotations();
@@ -194,13 +195,17 @@ public class PluginBuilder implements Builder<Object> {
             for (final ConstraintValidator<?> validator : validators) {
                 if (!validator.isValid(field.getName(), value)) {
                     invalid = true;
+                    if (!reason.isEmpty()) {
+                        reason += ", ";
+                    }
+                    reason += "field '" + field.getName() + "' has invalid value '" + value + "'";
                 }
             }
         }
         log.append(log.length() == 0 ? builder.getClass().getSimpleName() + "()" : ")");
         LOGGER.debug(log.toString());
         if (invalid) {
-            throw new ConfigurationException("Arguments given for element " + node.getName() + " are invalid");
+            throw new ConfigurationException("Arguments given for element " + node.getName() + " are invalid: " + reason);
         }
         checkForRemainingAttributes();
         verifyNodeChildrenUsed();
